@@ -15,16 +15,60 @@ public sealed class StackVM
 
     public void Execute(StackIRProgram program)
     {
-        foreach (var instruction in program.Instructions)
+        // Build label map
+        var labels = new Dictionary<string, int>();
+        for (int i = 0; i < program.Instructions.Count; i++)
         {
-            ExecuteInstruction(instruction);
+            var instruction = program.Instructions[i];
+            if (instruction.OpCode == OpCode.Label)
+            {
+                labels[(string)instruction.Operand!] = i;
+            }
+        }
+
+        // Execute with program counter
+        int pc = 0;
+        while (pc < program.Instructions.Count)
+        {
+            var instruction = program.Instructions[pc];
+            var jump = ExecuteInstruction(instruction, labels);
+
+            if (jump.HasValue)
+            {
+                pc = jump.Value;
+            }
+            else
+            {
+                pc++;
+            }
         }
     }
 
-    private void ExecuteInstruction(StackIRInstruction instruction)
+    private int? ExecuteInstruction(StackIRInstruction instruction, Dictionary<string, int> labels)
     {
         switch (instruction.OpCode)
         {
+            case OpCode.Label:
+                // Labels are markers, no execution
+                break;
+
+            case OpCode.Jump:
+                {
+                    var label = (string)instruction.Operand!;
+                    return labels[label];
+                }
+
+            case OpCode.JumpIfFalse:
+                {
+                    var value = (int)_stack.Pop()!;
+                    if (value == 0)
+                    {
+                        var label = (string)instruction.Operand!;
+                        return labels[label];
+                    }
+                    break;
+                }
+
             case OpCode.PushString:
                 _stack.Push(instruction.Operand!);
                 break;
@@ -66,6 +110,102 @@ public sealed class StackVM
                     int b = (int)_stack.Pop()!;
                     int a = (int)_stack.Pop()!;
                     _stack.Push(a % b);
+                    break;
+                }
+
+            case OpCode.GreaterThan:
+                {
+                    int b = (int)_stack.Pop()!;
+                    int a = (int)_stack.Pop()!;
+                    _stack.Push(a > b ? 1 : 0);
+                    break;
+                }
+            case OpCode.LessThan:
+                {
+                    int b = (int)_stack.Pop()!;
+                    int a = (int)_stack.Pop()!;
+                    _stack.Push(a < b ? 1 : 0);
+                    break;
+                }
+            case OpCode.GreaterThanOrEqual:
+                {
+                    int b = (int)_stack.Pop()!;
+                    int a = (int)_stack.Pop()!;
+                    _stack.Push(a >= b ? 1 : 0);
+                    break;
+                }
+            case OpCode.LessThanOrEqual:
+                {
+                    int b = (int)_stack.Pop()!;
+                    int a = (int)_stack.Pop()!;
+                    _stack.Push(a <= b ? 1 : 0);
+                    break;
+                }
+            case OpCode.EqualsEquals:
+                {
+                    int b = (int)_stack.Pop()!;
+                    int a = (int)_stack.Pop()!;
+                    _stack.Push(a == b ? 1 : 0);
+                    break;
+                }
+            case OpCode.NotEquals:
+                {
+                    int b = (int)_stack.Pop()!;
+                    int a = (int)_stack.Pop()!;
+                    _stack.Push(a != b ? 1 : 0);
+                    break;
+                }
+
+            case OpCode.PreIncrement:
+                {
+                    var target = _stack.Pop();
+                    if (target is null)
+                        throw new Exception("Null target for pre-increment.");
+
+                    var memberName = (string)instruction.Operand!;
+                    var currentValue = (int)GetMemberValue(target, memberName)!;
+                    var newValue = currentValue + 1;
+                    SetMemberValue(target, memberName, newValue);
+                    _stack.Push(newValue);
+                    break;
+                }
+            case OpCode.PreDecrement:
+                {
+                    var target = _stack.Pop();
+                    if (target is null)
+                        throw new Exception("Null target for pre-decrement.");
+
+                    var memberName = (string)instruction.Operand!;
+                    var currentValue = (int)GetMemberValue(target, memberName)!;
+                    var newValue = currentValue - 1;
+                    SetMemberValue(target, memberName, newValue);
+                    _stack.Push(newValue);
+                    break;
+                }
+            case OpCode.PostIncrement:
+                {
+                    var target = _stack.Pop();
+                    if (target is null)
+                        throw new Exception("Null target for post-increment.");
+
+                    var memberName = (string)instruction.Operand!;
+                    var currentValue = (int)GetMemberValue(target, memberName)!;
+                    var newValue = currentValue + 1;
+                    SetMemberValue(target, memberName, newValue);
+                    _stack.Push(currentValue);  // 후위는 이전 값을 반환
+                    break;
+                }
+            case OpCode.PostDecrement:
+                {
+                    var target = _stack.Pop();
+                    if (target is null)
+                        throw new Exception("Null target for post-decrement.");
+
+                    var memberName = (string)instruction.Operand!;
+                    var currentValue = (int)GetMemberValue(target, memberName)!;
+                    var newValue = currentValue - 1;
+                    SetMemberValue(target, memberName, newValue);
+                    _stack.Push(currentValue);  // 후위는 이전 값을 반환
                     break;
                 }
 
@@ -138,6 +278,8 @@ public sealed class StackVM
             default:
                 throw new Exception($"Unknown opcode: {instruction.OpCode}");
         }
+
+        return null;
     }
 
     private static bool HasExposure(MemberInfo member)

@@ -15,6 +15,26 @@ public sealed partial class Parser
 
     public StatementSyntax ParseStatement()
     {
+        if (_current.Type == TokenType.LBrace)
+        {
+            return ParseBlockStatement();
+        }
+
+        if (_current.Type == TokenType.If)
+        {
+            return ParseIfStatement();
+        }
+
+        if (_current.Type == TokenType.While)
+        {
+            return ParseWhileStatement();
+        }
+
+        if (_current.Type == TokenType.For)
+        {
+            return ParseForStatement();
+        }
+
         if (_current.Type == TokenType.Identifier &&
             _current.Lexeme == "Print")
         {
@@ -47,6 +67,95 @@ public sealed partial class Parser
 public sealed partial class Parser
 {
     /// <summary>
+    /// Parses an if statement.
+    /// </summary>
+    private IfStatementSyntax ParseIfStatement()
+    {
+        Consume(TokenType.If, "Expected 'if'");
+        Consume(TokenType.LParen, "Expected '(' after 'if'");
+        var condition = ParseExpression();
+        Consume(TokenType.RParen, "Expected ')' after condition");
+        var thenBranch = ParseStatement();
+
+        StatementSyntax? elseBranch = null;
+        if (_current.Type == TokenType.Else)
+        {
+            Advance();
+            elseBranch = ParseStatement();
+        }
+
+        return new IfStatementSyntax(condition, thenBranch, elseBranch);
+    }
+
+    /// <summary>
+    /// Parses a while statement.
+    /// </summary>
+    private WhileStatementSyntax ParseWhileStatement()
+    {
+        Consume(TokenType.While, "Expected 'while'");
+        Consume(TokenType.LParen, "Expected '(' after 'while'");
+        var condition = ParseExpression();
+        Consume(TokenType.RParen, "Expected ')' after condition");
+        var body = ParseStatement();
+        return new WhileStatementSyntax(condition, body);
+    }
+
+    /// <summary>
+    /// Parses a for statement.
+    /// </summary>
+    private ForStatementSyntax ParseForStatement()
+    {
+        Consume(TokenType.For, "Expected 'for'");
+        Consume(TokenType.LParen, "Expected '(' after 'for'");
+
+        // Initializer (optional)
+        StatementSyntax? initializer = null;
+        if (_current.Type != TokenType.Semicolon)
+        {
+            var expr = ParseExpression();
+            initializer = new ExpressionStatementSyntax(expr);
+        }
+        Consume(TokenType.Semicolon, "Expected ';' after for initializer");
+
+        // Condition (optional)
+        ExpressionSyntax? condition = null;
+        if (_current.Type != TokenType.Semicolon)
+        {
+            condition = ParseExpression();
+        }
+        Consume(TokenType.Semicolon, "Expected ';' after for condition");
+
+        // Increment (optional)
+        ExpressionSyntax? increment = null;
+        if (_current.Type != TokenType.RParen)
+        {
+            increment = ParseExpression();
+        }
+        Consume(TokenType.RParen, "Expected ')' after for clauses");
+
+        var body = ParseStatement();
+        return new ForStatementSyntax(initializer, condition, increment, body);
+    }
+
+    /// <summary>
+    /// Parses a block statement { ... }.
+    /// </summary>
+    private BlockStatementSyntax ParseBlockStatement()
+    {
+        Consume(TokenType.LBrace, "Expected '{'");
+
+        var statements = new List<StatementSyntax>();
+        while (_current.Type != TokenType.RBrace && _current.Type != TokenType.EOF)
+        {
+            statements.Add(ParseStatement());
+        }
+
+        Consume(TokenType.RBrace, "Expected '}'");
+
+        return new BlockStatementSyntax(statements);
+    }
+
+    /// <summary>
     /// Parses a Print statement.
     /// </summary>
     private PrintStatementSyntax ParsePrintStatement()
@@ -68,7 +177,7 @@ public sealed partial class Parser
 
     private ExpressionSyntax ParseAssignment()
     {
-        var expr = ParseAddition();
+        var expr = ParseComparison();
 
         if (_current.Type == TokenType.Equal)
         {
@@ -78,6 +187,26 @@ public sealed partial class Parser
             Advance();
             var value = ParseAssignment();
             return new AssignmentExpressionSyntax(target, value);
+        }
+
+        return expr;
+    }
+
+    private ExpressionSyntax ParseComparison()
+    {
+        var expr = ParseAddition();
+
+        while (_current.Type == TokenType.GreaterThan ||
+               _current.Type == TokenType.LessThan ||
+               _current.Type == TokenType.GreaterThanOrEqual ||
+               _current.Type == TokenType.LessThanOrEqual ||
+               _current.Type == TokenType.EqualsEquals ||
+               _current.Type == TokenType.NotEquals)
+        {
+            var op = _current.Type;
+            Advance();
+            var right = ParseAddition();
+            expr = new BinaryExpressionSyntax(expr, op, right);
         }
 
         return expr;
@@ -100,17 +229,33 @@ public sealed partial class Parser
 
     private ExpressionSyntax ParseMultiplication()
     {
-        var expr = ParsePrimary();
+        var expr = ParseUnary();
 
         while (_current.Type == TokenType.Asterisk || _current.Type == TokenType.Slash || _current.Type == TokenType.Percent)
         {
             var op = _current.Type;
             Advance();
-            var right = ParsePrimary();
+            var right = ParseUnary();
             expr = new BinaryExpressionSyntax(expr, op, right);
         }
 
         return expr;
+    }
+
+    private ExpressionSyntax ParseUnary()
+    {
+        // 전위 증감 연산자 처리
+        if (_current.Type == TokenType.PlusPlus || _current.Type == TokenType.MinusMinus)
+        {
+            var op = _current.Type;
+            Advance();
+            var expr = ParseUnary();
+            if (expr is not MemberAccessExpressionSyntax target)
+                throw new Exception("Increment/decrement operator requires a member access expression.");
+            return new IncrementDecrementExpressionSyntax(target, op, isPrefix: true);
+        }
+
+        return ParsePrimary();
     }
 
     private ExpressionSyntax ParsePrimary()
@@ -151,6 +296,16 @@ public sealed partial class Parser
     {
         while (true)
         {
+            // 후위 증감 연산자 처리
+            if (_current.Type == TokenType.PlusPlus || _current.Type == TokenType.MinusMinus)
+            {
+                if (expr is not MemberAccessExpressionSyntax target)
+                    throw new Exception("Increment/decrement operator requires a member access expression.");
+                var op = _current.Type;
+                Advance();
+                return new IncrementDecrementExpressionSyntax(target, op, isPrefix: false);
+            }
+
             if (_current.Type == TokenType.Dot)
             {
                 Advance();

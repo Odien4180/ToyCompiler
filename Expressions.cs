@@ -84,3 +84,17 @@ public sealed class AssignmentExpressionSyntax : ExpressionSyntax
         Value = value;
     }
 }
+
+public sealed class IncrementDecrementExpressionSyntax : ExpressionSyntax
+{
+    public MemberAccessExpressionSyntax Target { get; }
+    public TokenType Operator { get; }  // PlusPlus or MinusMinus
+    public bool IsPrefix { get; }
+
+    public IncrementDecrementExpressionSyntax(MemberAccessExpressionSyntax target, TokenType op, bool isPrefix)
+    {
+        Target = target;
+        Operator = op;
+        IsPrefix = isPrefix;
+    }
+}

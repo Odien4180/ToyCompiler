@@ -36,11 +36,21 @@ public sealed class Lexer
         if (current == '+')
         {
             Advance();
+            if (!IsAtEnd() && Peek() == '+')
+            {
+                Advance();
+                return new Token(TokenType.PlusPlus, "++");
+            }
             return new Token(TokenType.Plus, "+");
         }
         if (current == '-')
         {
             Advance();
+            if (!IsAtEnd() && Peek() == '-')
+            {
+                Advance();
+                return new Token(TokenType.MinusMinus, "--");
+            }
             return new Token(TokenType.Minus, "-");
         }
         if (current == '*')
@@ -70,10 +80,52 @@ public sealed class Lexer
             Advance();
             return new Token(TokenType.Comma, ",");
         }
+        if (current == ';')
+        {
+            Advance();
+            return new Token(TokenType.Semicolon, ";");
+        }
+
+        // Relational operators (>, <, >=, <=, ==, !=)
+        if (current == '>')
+        {
+            Advance();
+            if (!IsAtEnd() && Peek() == '=')
+            {
+                Advance();
+                return new Token(TokenType.GreaterThanOrEqual, ">=");
+            }
+            return new Token(TokenType.GreaterThan, ">");
+        }
+        if (current == '<')
+        {
+            Advance();
+            if (!IsAtEnd() && Peek() == '=')
+            {
+                Advance();
+                return new Token(TokenType.LessThanOrEqual, "<=");
+            }
+            return new Token(TokenType.LessThan, "<");
+        }
         if (current == '=')
         {
             Advance();
+            if (!IsAtEnd() && Peek() == '=')
+            {
+                Advance();
+                return new Token(TokenType.EqualsEquals, "==");
+            }
             return new Token(TokenType.Equal, "=");
+        }
+        if (current == '!')
+        {
+            Advance();
+            if (!IsAtEnd() && Peek() == '=')
+            {
+                Advance();
+                return new Token(TokenType.NotEquals, "!=");
+            }
+            throw new Exception($"Unexpected character: '!'");
         }
 
         // Single-character tokens
@@ -84,6 +136,10 @@ public sealed class Lexer
                 return new Token(TokenType.LParen, "(");
             case ')':
                 return new Token(TokenType.RParen, ")");
+            case '{':
+                return new Token(TokenType.LBrace, "{");
+            case '}':
+                return new Token(TokenType.RBrace, "}");
         }
 
         throw new Exception($"Unexpected character: '{current}'");
@@ -101,7 +157,16 @@ public sealed class Lexer
             Advance();
 
         string text = _source.Substring(start, _position - start);
-        return new Token(TokenType.Identifier, text);
+
+        // 키워드 체크
+        return text switch
+        {
+            "for" => new Token(TokenType.For, text),
+            "while" => new Token(TokenType.While, text),
+            "if" => new Token(TokenType.If, text),
+            "else" => new Token(TokenType.Else, text),
+            _ => new Token(TokenType.Identifier, text)
+        };
     }
 
     private Token ReadNumber()

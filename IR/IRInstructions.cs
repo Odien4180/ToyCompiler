@@ -35,3 +35,20 @@ public sealed class MethodCallInfo
         return $"{Name}/{ArgumentCount}";
     }
 }
+
+public sealed class LabelInfo
+{
+    public string Name { get; }
+    public int InstructionIndex { get; set; }
+
+    public LabelInfo(string name)
+    {
+        Name = name;
+        InstructionIndex = -1;
+    }
+
+    public override string ToString()
+    {
+        return Name;
+    }
+}

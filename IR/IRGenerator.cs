@@ -2,11 +2,18 @@ namespace ToyCompiler.IR;
 
 public sealed class StackIRGenerator
 {
+    private int _labelCounter = 0;
+
     public StackIRProgram Generate(StatementSyntax statement)
     {
         var program = new StackIRProgram();
         EmitStatement(statement, program);
         return program;
+    }
+
+    private string GenerateLabel(string prefix)
+    {
+        return $"{prefix}_{_labelCounter++}";
     }
 
     private void EmitStatement(StatementSyntax statement, StackIRProgram program)
@@ -20,6 +27,21 @@ public sealed class StackIRGenerator
                 EmitExpression(exprStmt.Expression, program);
                 program.Instructions.Add(new StackIRInstruction(OpCode.Pop));
                 break;
+            case BlockStatementSyntax block:
+                foreach (var stmt in block.Statements)
+                {
+                    EmitStatement(stmt, program);
+                }
+                break;
+            case WhileStatementSyntax whileStmt:
+                EmitWhile(whileStmt, program);
+                break;
+            case ForStatementSyntax forStmt:
+                EmitFor(forStmt, program);
+                break;
+            case IfStatementSyntax ifStmt:
+                EmitIf(ifStmt, program);
+                break;
 
             default:
                 throw new Exception($"Unsupported statement: {statement.GetType().Name}");
@@ -32,6 +54,99 @@ public sealed class StackIRGenerator
         program.Instructions.Add(
             new StackIRInstruction(OpCode.CallPrint)
         );
+    }
+
+    private void EmitWhile(WhileStatementSyntax whileStmt, StackIRProgram program)
+    {
+        var startLabel = GenerateLabel("while_start");
+        var endLabel = GenerateLabel("while_end");
+
+        // Start label
+        program.Instructions.Add(new StackIRInstruction(OpCode.Label, startLabel));
+
+        // Condition
+        EmitExpression(whileStmt.Condition, program);
+        program.Instructions.Add(new StackIRInstruction(OpCode.JumpIfFalse, endLabel));
+
+        // Body
+        EmitStatement(whileStmt.Body, program);
+
+        // Jump back to start
+        program.Instructions.Add(new StackIRInstruction(OpCode.Jump, startLabel));
+
+        // End label
+        program.Instructions.Add(new StackIRInstruction(OpCode.Label, endLabel));
+    }
+
+    private void EmitFor(ForStatementSyntax forStmt, StackIRProgram program)
+    {
+        // Initializer
+        if (forStmt.Initializer != null)
+        {
+            EmitStatement(forStmt.Initializer, program);
+        }
+
+        var startLabel = GenerateLabel("for_start");
+        var endLabel = GenerateLabel("for_end");
+        var continueLabel = GenerateLabel("for_continue");
+
+        // Start label
+        program.Instructions.Add(new StackIRInstruction(OpCode.Label, startLabel));
+
+        // Condition (if exists)
+        if (forStmt.Condition != null)
+        {
+            EmitExpression(forStmt.Condition, program);
+            program.Instructions.Add(new StackIRInstruction(OpCode.JumpIfFalse, endLabel));
+        }
+
+        // Body
+        EmitStatement(forStmt.Body, program);
+
+        // Continue label (for increment)
+        program.Instructions.Add(new StackIRInstruction(OpCode.Label, continueLabel));
+
+        // Increment
+        if (forStmt.Increment != null)
+        {
+            EmitExpression(forStmt.Increment, program);
+            program.Instructions.Add(new StackIRInstruction(OpCode.Pop));
+        }
+
+        // Jump back to start
+        program.Instructions.Add(new StackIRInstruction(OpCode.Jump, startLabel));
+
+        // End label
+        program.Instructions.Add(new StackIRInstruction(OpCode.Label, endLabel));
+    }
+
+    private void EmitIf(IfStatementSyntax ifStmt, StackIRProgram program)
+    {
+        var elseLabel = GenerateLabel("else");
+        var endLabel = GenerateLabel("if_end");
+
+        // Condition
+        EmitExpression(ifStmt.Condition, program);
+        program.Instructions.Add(new StackIRInstruction(OpCode.JumpIfFalse, elseLabel));
+
+        // Then branch
+        EmitStatement(ifStmt.ThenBranch, program);
+
+        if (ifStmt.ElseBranch != null)
+        {
+            // Jump over else branch
+            program.Instructions.Add(new StackIRInstruction(OpCode.Jump, endLabel));
+        }
+
+        // Else label
+        program.Instructions.Add(new StackIRInstruction(OpCode.Label, elseLabel));
+
+        // Else branch (if exists)
+        if (ifStmt.ElseBranch != null)
+        {
+            EmitStatement(ifStmt.ElseBranch, program);
+            program.Instructions.Add(new StackIRInstruction(OpCode.Label, endLabel));
+        }
     }
 
     private void EmitExpression(ExpressionSyntax expr, StackIRProgram program)
@@ -80,6 +195,23 @@ public sealed class StackIRGenerator
                     new StackIRInstruction(OpCode.SetProperty, assign.Target.MemberName));
                 break;
 
+            case IncrementDecrementExpressionSyntax incDec:
+                EmitExpression(incDec.Target.Target, program);
+
+                OpCode opCode;
+                if (incDec.IsPrefix)
+                {
+                    opCode = incDec.Operator == TokenType.PlusPlus ? OpCode.PreIncrement : OpCode.PreDecrement;
+                }
+                else
+                {
+                    opCode = incDec.Operator == TokenType.PlusPlus ? OpCode.PostIncrement : OpCode.PostDecrement;
+                }
+
+                program.Instructions.Add(
+                    new StackIRInstruction(opCode, incDec.Target.MemberName));
+                break;
+
             case BinaryExpressionSyntax bin:
                 EmitExpression(bin.Left, program);
                 EmitExpression(bin.Right, program);
@@ -100,6 +232,24 @@ public sealed class StackIRGenerator
                         break;
                     case TokenType.Percent:
                         program.Instructions.Add(new StackIRInstruction(OpCode.Mod));
+                        break;
+                    case TokenType.GreaterThan:
+                        program.Instructions.Add(new StackIRInstruction(OpCode.GreaterThan));
+                        break;
+                    case TokenType.LessThan:
+                        program.Instructions.Add(new StackIRInstruction(OpCode.LessThan));
+                        break;
+                    case TokenType.GreaterThanOrEqual:
+                        program.Instructions.Add(new StackIRInstruction(OpCode.GreaterThanOrEqual));
+                        break;
+                    case TokenType.LessThanOrEqual:
+                        program.Instructions.Add(new StackIRInstruction(OpCode.LessThanOrEqual));
+                        break;
+                    case TokenType.EqualsEquals:
+                        program.Instructions.Add(new StackIRInstruction(OpCode.EqualsEquals));
+                        break;
+                    case TokenType.NotEquals:
+                        program.Instructions.Add(new StackIRInstruction(OpCode.NotEquals));
                         break;
                     default:
                         throw new Exception($"Unsupported operator: {bin.Operator}");

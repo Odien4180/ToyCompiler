@@ -10,6 +10,9 @@ public class Player
     public int Score;
 
     [ScriptExpose]
+    public int Counter;
+
+    [ScriptExpose]
     public void Heal(int amount)
     {
         Health += amount;

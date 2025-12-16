@@ -7,14 +7,31 @@ public enum TokenType
     NumberLiteral,
     LParen,
     RParen,
+    LBrace,
+    RBrace,
     Plus,
     Minus,
+    PlusPlus,
+    MinusMinus,
     Asterisk,
     Slash,
     Percent,
     Dot,
     Comma,
+    Semicolon,
     Equal,
+    GreaterThan,
+
+    // Keywords
+    For,
+    While,
+    If,
+    Else,
+    LessThan,
+    GreaterThanOrEqual,
+    LessThanOrEqual,
+    EqualsEquals,
+    NotEquals,
     EOF
 }
 
