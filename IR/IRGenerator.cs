@@ -1,3 +1,5 @@
+using System;
+
 namespace ToyCompiler.IR
 {
     public sealed class StackIRGenerator

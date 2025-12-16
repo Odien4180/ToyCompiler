@@ -1,3 +1,5 @@
+using System;
+
 namespace ToyCompiler
 {
     public sealed class Lexer

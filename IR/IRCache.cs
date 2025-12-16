@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace ToyCompiler.IR
 {
     public sealed class IRCache : IDisposable

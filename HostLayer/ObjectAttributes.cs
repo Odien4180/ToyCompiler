@@ -1,3 +1,5 @@
+using System;
+
 namespace ToyCompiler.HostLayer
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct |
