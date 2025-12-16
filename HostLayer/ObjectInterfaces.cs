@@ -1,5 +1,7 @@
-public interface IObjectGetter
+namespace ToyCompiler.HostLayer
 {
-    bool GetObject(string name, out object? obj);
+    public interface IObjectGetter
+    {
+        bool GetObject(string name, out object? obj);
+    }
 }
-

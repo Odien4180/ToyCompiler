@@ -1,54 +1,55 @@
-namespace ToyCompiler.IR;
-
-public sealed class StackIRInstruction
+namespace ToyCompiler.IR
 {
-    public OpCode OpCode { get; }
-    public object? Operand { get; }
-
-    public StackIRInstruction(OpCode opCode, object? operand = null)
+    public sealed class StackIRInstruction
     {
-        OpCode = opCode;
-        Operand = operand;
+        public OpCode OpCode { get; }
+        public object? Operand { get; }
+
+        public StackIRInstruction(OpCode opCode, object? operand = null)
+        {
+            OpCode = opCode;
+            Operand = operand;
+        }
+
+        public override string ToString()
+        {
+            return Operand == null
+                ? OpCode.ToString()
+                : $"{OpCode} {Operand}";
+        }
     }
 
-    public override string ToString()
+    public sealed class MethodCallInfo
     {
-        return Operand == null
-            ? OpCode.ToString()
-            : $"{OpCode} {Operand}";
-    }
-}
+        public string Name { get; }
+        public int ArgumentCount { get; }
 
-public sealed class MethodCallInfo
-{
-    public string Name { get; }
-    public int ArgumentCount { get; }
+        public MethodCallInfo(string name, int argumentCount)
+        {
+            Name = name;
+            ArgumentCount = argumentCount;
+        }
 
-    public MethodCallInfo(string name, int argumentCount)
-    {
-        Name = name;
-        ArgumentCount = argumentCount;
+        public override string ToString()
+        {
+            return $"{Name}/{ArgumentCount}";
+        }
     }
 
-    public override string ToString()
+    public sealed class LabelInfo
     {
-        return $"{Name}/{ArgumentCount}";
-    }
-}
+        public string Name { get; }
+        public int InstructionIndex { get; set; }
 
-public sealed class LabelInfo
-{
-    public string Name { get; }
-    public int InstructionIndex { get; set; }
+        public LabelInfo(string name)
+        {
+            Name = name;
+            InstructionIndex = -1;
+        }
 
-    public LabelInfo(string name)
-    {
-        Name = name;
-        InstructionIndex = -1;
-    }
-
-    public override string ToString()
-    {
-        return Name;
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

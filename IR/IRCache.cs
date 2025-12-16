@@ -1,21 +1,22 @@
-namespace ToyCompiler.IR;
-
-public sealed class IRCache : IDisposable
+namespace ToyCompiler.IR
 {
-    private readonly Dictionary<string, StackIRProgram> _cache = new();
-
-    public bool TryGet(string key, out StackIRProgram? program)
+    public sealed class IRCache : IDisposable
     {
-        return _cache.TryGetValue(key, out program);
-    }
+        private readonly Dictionary<string, StackIRProgram> _cache = new();
 
-    public void Set(string key, StackIRProgram program)
-    {
-        _cache[key] = program;
-    }
+        public bool TryGet(string key, out StackIRProgram? program)
+        {
+            return _cache.TryGetValue(key, out program);
+        }
 
-    public void Dispose()
-    {
-        _cache.Clear();
+        public void Set(string key, StackIRProgram program)
+        {
+            _cache[key] = program;
+        }
+
+        public void Dispose()
+        {
+            _cache.Clear();
+        }
     }
 }

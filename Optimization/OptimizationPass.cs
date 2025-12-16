@@ -1,6 +1,7 @@
-namespace ToyCompiler.IR.Optimization;
-
-public interface IOptimizationPass
+namespace ToyCompiler.IR.Optimization
 {
-    StackIRProgram Run(StackIRProgram program);
+    public interface IOptimizationPass
+    {
+        StackIRProgram Run(StackIRProgram program);
+    }
 }

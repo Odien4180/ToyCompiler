@@ -1,3 +1,4 @@
-namespace ToyCompiler;
-
-public abstract class SyntaxNode { }
+namespace ToyCompiler
+{
+    public abstract class SyntaxNode { }
+}

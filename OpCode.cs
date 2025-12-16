@@ -1,40 +1,41 @@
-namespace ToyCompiler;
-
-public enum OpCode
+namespace ToyCompiler
 {
-    PushString,
-    PushInt,
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Mod,
+    public enum OpCode
+    {
+        PushString,
+        PushInt,
+        Add,
+        Sub,
+        Mul,
+        Div,
+        Mod,
 
-    // Comparison operators
-    GreaterThan,
-    LessThan,
-    GreaterThanOrEqual,
-    LessThanOrEqual,
-    EqualsEquals,
-    NotEquals,
+        // Comparison operators
+        GreaterThan,
+        LessThan,
+        GreaterThanOrEqual,
+        LessThanOrEqual,
+        EqualsEquals,
+        NotEquals,
 
-    // Increment/Decrement operators
-    PreIncrement,
-    PreDecrement,
-    PostIncrement,
-    PostDecrement,
+        // Increment/Decrement operators
+        PreIncrement,
+        PreDecrement,
+        PostIncrement,
+        PostDecrement,
 
-    CallPrint,
+        CallPrint,
 
-    Pop,
+        Pop,
 
-    // Jump instructions
-    Jump,
-    JumpIfFalse,
-    Label,
+        // Jump instructions
+        Jump,
+        JumpIfFalse,
+        Label,
 
-    LoadObject,
-    CallMethod,
-    GetProperty,
-    SetProperty
+        LoadObject,
+        CallMethod,
+        GetProperty,
+        SetProperty
+    }
 }

@@ -1,221 +1,222 @@
-namespace ToyCompiler;
-
-public sealed class Lexer
+namespace ToyCompiler
 {
-    private readonly string _source;
-    private int _position;
-
-    public Lexer(string source)
+    public sealed class Lexer
     {
-        _source = source;
-        _position = 0;
-    }
+        private readonly string _source;
+        private int _position;
 
-    public Token NextToken()
-    {
-        SkipWhitespace();
-
-        if (IsAtEnd())
-            return new Token(TokenType.EOF, string.Empty);
-
-        char current = Peek();
-
-        // Identifier (Print)
-        if (char.IsLetter(current))
-            return ReadIdentifier();
-
-        // String Literal ("Hellow world")
-        if (current == '"')
-            return ReadStringLiteral();
-
-        // NextToken 내부
-        if (char.IsDigit(current))
-            return ReadNumber();
-
-        // +, -, *, /, % 처리
-        if (current == '+')
+        public Lexer(string source)
         {
-            Advance();
-            if (!IsAtEnd() && Peek() == '+')
+            _source = source;
+            _position = 0;
+        }
+
+        public Token NextToken()
+        {
+            SkipWhitespace();
+
+            if (IsAtEnd())
+                return new Token(TokenType.EOF, string.Empty);
+
+            char current = Peek();
+
+            // Identifier (Print)
+            if (char.IsLetter(current))
+                return ReadIdentifier();
+
+            // String Literal ("Hellow world")
+            if (current == '"')
+                return ReadStringLiteral();
+
+            // NextToken 내부
+            if (char.IsDigit(current))
+                return ReadNumber();
+
+            // +, -, *, /, % 처리
+            if (current == '+')
             {
                 Advance();
-                return new Token(TokenType.PlusPlus, "++");
+                if (!IsAtEnd() && Peek() == '+')
+                {
+                    Advance();
+                    return new Token(TokenType.PlusPlus, "++");
+                }
+                return new Token(TokenType.Plus, "+");
             }
-            return new Token(TokenType.Plus, "+");
-        }
-        if (current == '-')
-        {
-            Advance();
-            if (!IsAtEnd() && Peek() == '-')
+            if (current == '-')
             {
                 Advance();
-                return new Token(TokenType.MinusMinus, "--");
+                if (!IsAtEnd() && Peek() == '-')
+                {
+                    Advance();
+                    return new Token(TokenType.MinusMinus, "--");
+                }
+                return new Token(TokenType.Minus, "-");
             }
-            return new Token(TokenType.Minus, "-");
-        }
-        if (current == '*')
-        {
-            Advance();
-            return new Token(TokenType.Asterisk, "*");
-        }
-        if (current == '/')
-        {
-            Advance();
-            return new Token(TokenType.Slash, "/");
-        }
-        if (current == '%')
-        {
-            Advance();
-            return new Token(TokenType.Percent, "%");
-        }
-
-        // ., ,, = 처리
-        if (current == '.')
-        {
-            Advance();
-            return new Token(TokenType.Dot, ".");
-        }
-        if (current == ',')
-        {
-            Advance();
-            return new Token(TokenType.Comma, ",");
-        }
-        if (current == ';')
-        {
-            Advance();
-            return new Token(TokenType.Semicolon, ";");
-        }
-
-        // Relational operators (>, <, >=, <=, ==, !=)
-        if (current == '>')
-        {
-            Advance();
-            if (!IsAtEnd() && Peek() == '=')
+            if (current == '*')
             {
                 Advance();
-                return new Token(TokenType.GreaterThanOrEqual, ">=");
+                return new Token(TokenType.Asterisk, "*");
             }
-            return new Token(TokenType.GreaterThan, ">");
-        }
-        if (current == '<')
-        {
-            Advance();
-            if (!IsAtEnd() && Peek() == '=')
+            if (current == '/')
             {
                 Advance();
-                return new Token(TokenType.LessThanOrEqual, "<=");
+                return new Token(TokenType.Slash, "/");
             }
-            return new Token(TokenType.LessThan, "<");
-        }
-        if (current == '=')
-        {
-            Advance();
-            if (!IsAtEnd() && Peek() == '=')
+            if (current == '%')
             {
                 Advance();
-                return new Token(TokenType.EqualsEquals, "==");
+                return new Token(TokenType.Percent, "%");
             }
-            return new Token(TokenType.Equal, "=");
-        }
-        if (current == '!')
-        {
-            Advance();
-            if (!IsAtEnd() && Peek() == '=')
+
+            // ., ,, = 처리
+            if (current == '.')
             {
                 Advance();
-                return new Token(TokenType.NotEquals, "!=");
+                return new Token(TokenType.Dot, ".");
             }
-            throw new Exception($"Unexpected character: '!'");
+            if (current == ',')
+            {
+                Advance();
+                return new Token(TokenType.Comma, ",");
+            }
+            if (current == ';')
+            {
+                Advance();
+                return new Token(TokenType.Semicolon, ";");
+            }
+
+            // Relational operators (>, <, >=, <=, ==, !=)
+            if (current == '>')
+            {
+                Advance();
+                if (!IsAtEnd() && Peek() == '=')
+                {
+                    Advance();
+                    return new Token(TokenType.GreaterThanOrEqual, ">=");
+                }
+                return new Token(TokenType.GreaterThan, ">");
+            }
+            if (current == '<')
+            {
+                Advance();
+                if (!IsAtEnd() && Peek() == '=')
+                {
+                    Advance();
+                    return new Token(TokenType.LessThanOrEqual, "<=");
+                }
+                return new Token(TokenType.LessThan, "<");
+            }
+            if (current == '=')
+            {
+                Advance();
+                if (!IsAtEnd() && Peek() == '=')
+                {
+                    Advance();
+                    return new Token(TokenType.EqualsEquals, "==");
+                }
+                return new Token(TokenType.Equal, "=");
+            }
+            if (current == '!')
+            {
+                Advance();
+                if (!IsAtEnd() && Peek() == '=')
+                {
+                    Advance();
+                    return new Token(TokenType.NotEquals, "!=");
+                }
+                throw new Exception($"Unexpected character: '!'");
+            }
+
+            // Single-character tokens
+            Advance();
+            switch (current)
+            {
+                case '(':
+                    return new Token(TokenType.LParen, "(");
+                case ')':
+                    return new Token(TokenType.RParen, ")");
+                case '{':
+                    return new Token(TokenType.LBrace, "{");
+                case '}':
+                    return new Token(TokenType.RBrace, "}");
+            }
+
+            throw new Exception($"Unexpected character: '{current}'");
         }
 
-        // Single-character tokens
-        Advance();
-        switch (current)
+        // -------------------------
+        // Helpers
+        // -------------------------
+
+        private Token ReadIdentifier()
         {
-            case '(':
-                return new Token(TokenType.LParen, "(");
-            case ')':
-                return new Token(TokenType.RParen, ")");
-            case '{':
-                return new Token(TokenType.LBrace, "{");
-            case '}':
-                return new Token(TokenType.RBrace, "}");
+            int start = _position;
+
+            while (!IsAtEnd() && char.IsLetterOrDigit(Peek()))
+                Advance();
+
+            string text = _source.Substring(start, _position - start);
+
+            // 키워드 체크
+            return text switch
+            {
+                "for" => new Token(TokenType.For, text),
+                "while" => new Token(TokenType.While, text),
+                "if" => new Token(TokenType.If, text),
+                "else" => new Token(TokenType.Else, text),
+                _ => new Token(TokenType.Identifier, text)
+            };
         }
 
-        throw new Exception($"Unexpected character: '{current}'");
-    }
-
-    // -------------------------
-    // Helpers
-    // -------------------------
-
-    private Token ReadIdentifier()
-    {
-        int start = _position;
-
-        while (!IsAtEnd() && char.IsLetterOrDigit(Peek()))
-            Advance();
-
-        string text = _source.Substring(start, _position - start);
-
-        // 키워드 체크
-        return text switch
+        private Token ReadNumber()
         {
-            "for" => new Token(TokenType.For, text),
-            "while" => new Token(TokenType.While, text),
-            "if" => new Token(TokenType.If, text),
-            "else" => new Token(TokenType.Else, text),
-            _ => new Token(TokenType.Identifier, text)
-        };
-    }
+            int start = _position;
 
-    private Token ReadNumber()
-    {
-        int start = _position;
+            while (!IsAtEnd() && char.IsDigit(Peek()))
+                Advance();
 
-        while (!IsAtEnd() && char.IsDigit(Peek()))
-            Advance();
+            string text = _source.Substring(start, _position - start);
+            return new Token(TokenType.NumberLiteral, text);
+        }
 
-        string text = _source.Substring(start, _position - start);
-        return new Token(TokenType.NumberLiteral, text);
-    }
+        private Token ReadStringLiteral()
+        {
+            Advance(); // skip opening "
 
-    private Token ReadStringLiteral()
-    {
-        Advance(); // skip opening "
+            int start = _position;
 
-        int start = _position;
+            while (!IsAtEnd() && Peek() != '"')
+                Advance();
 
-        while (!IsAtEnd() && Peek() != '"')
-            Advance();
+            if (IsAtEnd())
+                throw new Exception("Unterminated string literal.");
 
-        if (IsAtEnd())
-            throw new Exception("Unterminated string literal.");
+            string value = _source.Substring(start, _position - start);
+            Advance(); // skip closing "
 
-        string value = _source.Substring(start, _position - start);
-        Advance(); // skip closing "
+            return new Token(TokenType.StringLiteral, value);
+        }
 
-        return new Token(TokenType.StringLiteral, value);
-    }
+        private void SkipWhitespace()
+        {
+            while (!IsAtEnd() && char.IsWhiteSpace(Peek()))
+                Advance();
+        }
 
-    private void SkipWhitespace()
-    {
-        while (!IsAtEnd() && char.IsWhiteSpace(Peek()))
-            Advance();
-    }
+        private bool IsAtEnd()
+        {
+            return _position >= _source.Length;
+        }
 
-    private bool IsAtEnd()
-    {
-        return _position >= _source.Length;
-    }
+        private char Peek()
+        {
+            return _source[_position];
+        }
 
-    private char Peek()
-    {
-        return _source[_position];
-    }
-
-    private void Advance()
-    {
-        _position++;
+        private void Advance()
+        {
+            _position++;
+        }
     }
 }

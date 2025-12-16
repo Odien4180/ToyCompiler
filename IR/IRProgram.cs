@@ -1,6 +1,7 @@
-namespace ToyCompiler.IR;
-
-public sealed class StackIRProgram
+namespace ToyCompiler.IR
 {
-    public List<StackIRInstruction> Instructions { get; } = new();
+    public sealed class StackIRProgram
+    {
+        public List<StackIRInstruction> Instructions { get; } = new();
+    }
 }

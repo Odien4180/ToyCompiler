@@ -1,32 +1,35 @@
 using System;
 
-[ScriptExpose]
-public class Player
+namespace ToyCompiler.HostLayer
 {
     [ScriptExpose]
-    public int Health { get; set; } = 50;
-
-    [ScriptExpose]
-    public int Score;
-
-    [ScriptExpose]
-    public int Counter;
-
-    [ScriptExpose]
-    public void Heal(int amount)
+    public class Player
     {
-        Health += amount;
-    }
+        [ScriptExpose]
+        public int Health { get; set; } = 50;
 
-    [ScriptExpose]
-    public int Add(int a, int b)
-    {
-        return a + b;
-    }
+        [ScriptExpose]
+        public int Score;
 
-    [ScriptExpose]
-    public void PrintStatus()
-    {
-        Console.WriteLine($"[Player] Health={Health}, Score={Score}");
+        [ScriptExpose]
+        public int Counter;
+
+        [ScriptExpose]
+        public void Heal(int amount)
+        {
+            Health += amount;
+        }
+
+        [ScriptExpose]
+        public int Add(int a, int b)
+        {
+            return a + b;
+        }
+
+        [ScriptExpose]
+        public void PrintStatus()
+        {
+            Console.WriteLine($"[Player] Health={Health}, Score={Score}");
+        }
     }
 }
